@@ -7,6 +7,16 @@ The 3D cube is rendered with **Three.js / WebGL**. The logical puzzle is a flat
 **6 × 9 = 54 sticker** array. Movement, search, and animation are deliberately
 decoupled.
 
+![CUBE//DFS idle screen with the cube and Pathfinder console side by side](docs/screenshots/overview.png)
+
+*The Pathfinder console stays pinned beside the cube. The default 5-move
+scramble is small enough for the bounded DFS to search to completion.*
+
+![CUBE//DFS after solving a five-move scramble](docs/screenshots/solution.png)
+
+*A completed run: the scramble, first-found solution, node count, bound, visited
+states, and search time all remain visible.*
+
 ```bash
 npm install
 npm run dev      # http://localhost:5173
