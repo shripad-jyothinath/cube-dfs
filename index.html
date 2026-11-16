@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#07090b" />
+    <meta
+      name="description"
+      content="An interactive 3D Rubik's Cube solved by a depth-first search engine."
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>CUBE//DFS — Depth-first cube lab</title>
+  </head>
+  <body>
+    <div class="app-shell" id="app">
+      <div class="backdrop" aria-hidden="true">
+        <div class="backdrop-glow glow-a"></div>
+        <div class="backdrop-glow glow-b"></div>
+        <div class="backdrop-grid"></div>
+        <div class="backdrop-grain"></div>
+      </div>
+
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path d="M20 3.5 35 11v18L20 36.5 5 29V11L20 3.5Z" stroke="currentColor" stroke-width="1.35" />
+              <path d="m5 11 15 7.5L35 11M20 18.5v18" stroke="currentColor" stroke-width="1.1" opacity=".55" />
+              <path d="m12.5 7.25 15 7.5v18" stroke="currentColor" stroke-width="1.1" opacity=".28" />
+              <circle cx="20" cy="18.5" r="1.8" fill="currentColor" />
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <div class="brand-title">CUBE<span class="accent">//</span>DFS</div>
+            <div class="brand-sub">DEPTH-FIRST CUBE LABORATORY</div>
+          </div>
+        </div>
+
+        <div class="topbar-center" aria-label="Project specs">
+          <div class="top-spec">
+            <span>ENGINE</span>
+            <strong>IDDFS</strong>
+          </div>
+          <div class="top-spec">
+            <span>STATE</span>
+            <strong>54 STICKERS</strong>
+          </div>
+          <div class="top-spec">
+            <span>RENDER</span>
+            <strong>WEBGL</strong>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="engine-pill" id="enginePill" data-state="idle">
+            <span class="engine-dot"></span>
+            <span id="engineLabel">ENGINE READY</span>
+          </div>
+          <div class="topbar-rule"></div>
+          <div class="mini-build">LAB/001</div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="stage" id="stage" aria-label="Interactive 3D cube">
+          <div class="stage-dots" aria-hidden="true"></div>
+          <div class="stage-glow" aria-hidden="true"></div>
+          <div class="stage-scan" aria-hidden="true"></div>
+          <div class="stage-vignette" aria-hidden="true"></div>
+          <div class="corner corner-tl" aria-hidden="true"></div>
+          <div class="corner corner-tr" aria-hidden="true"></div>
+          <div class="corner corner-bl" aria-hidden="true"></div>
+          <div class="corner corner-br" aria-hidden="true"></div>
+
+          <div class="stage-hud stage-hud-top">
+            <div class="hud-block">
+              <span class="hud-label">LIVE MODEL</span>
+              <span class="hud-value">RUBIK / 3×3×3</span>
+            </div>
+            <div class="hud-block hud-right">
+              <span class="hud-label">GEOMETRY</span>
+              <span class="hud-value">26 CUBELETS</span>
+            </div>
+          </div>
+
+          <div class="stage-hud stage-hud-bottom">
+            <div class="stage-mode">
+              <span class="hud-label">MODE</span>
+              <strong id="stageStatus">STANDBY</strong>
+            </div>
+            <div class="orbit-hint">
+              <svg viewBox="0 0 22 28" fill="none" aria-hidden="true">
+                <rect x="4.75" y="1" width="12.5" height="19" rx="6.25" stroke="currentColor" />
+                <path d="M11 5v5" stroke="currentColor" stroke-linecap="round" />
+                <path d="M8 23.5c1.8 1.4 4.2 1.4 6 0" stroke="currentColor" stroke-linecap="round" />
+              </svg>
+              <span><b>DRAG</b> ORBIT <i></i> <b>SCROLL</b> ZOOM <i></i> <b>RIGHT-DRAG</b> PAN</span>
+            </div>
+            <div class="face-readout">
+              <span class="hud-label">TURN</span>
+              <strong id="turnReadout">—</strong>
+            </div>
+          </div>
+
+          <div class="stage-flash" id="stageFlash" aria-hidden="true"></div>
+        </section>
+
+        <aside class="panel console-panel" aria-label="Solver console">
+          <header class="console-head">
+            <div class="panel-kicker">
+              <span><i class="kicker-line"></i> SOLVER CONSOLE</span>
+            </div>
+            <div class="status-pill" id="statusPill" data-state="idle" role="status" aria-live="polite">
+              <span class="status-dot"></span>
+              <span id="statusText">READY</span>
+            </div>
+          </header>
+
+          <div class="console-intro">
+            <h1>PATH<span>FINDER</span><i>.</i></h1>
+            <p>A real, bounded depth-first search over a flat 54-sticker state. Scramble, then watch the first route it finds.</p>
+          </div>
+
+          <div class="action-row">
+            <button class="action-btn scramble-btn" id="scrambleBtn" type="button">
+              <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h3.2c1.4 0 2.4.7 3.2 1.8l3.2 5.4c.8 1.1 1.8 1.8 3.2 1.8H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                  <path d="m17.5 4.5 3 2.5-3 2.5M17.5 14.5l3 2.5-3 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M4 17h3.2c1.4 0 2.4-.7 3.2-1.8l.9-1.5M14.1 8.2l.6-1c.8-1.1 1.8-1.7 3.2-1.7H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".45" />
+                </svg>
+              </span>
+              <span class="action-copy">
+                <strong>Scramble</strong>
+                <small id="scrambleMeta">5 random moves</small>
+              </span>
+              <kbd>S</kbd>
+            </button>
+
+            <button class="action-btn solve-btn" id="solveBtn" type="button">
+              <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="m9 7 8 5-8 5V7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                  <circle cx="12" cy="12" r="9.1" stroke="currentColor" stroke-width="1.2" opacity=".45" />
+                </svg>
+              </span>
+              <span class="action-copy">
+                <strong id="solveLabel">Solve</strong>
+                <small id="solveSub">Start DFS search</small>
+              </span>
+              <kbd>↵</kbd>
+            </button>
+          </div>
+
+          <button class="reset-btn" id="resetBtn" type="button">
+            <svg viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M14.4 6.3A6.1 6.1 0 1 0 15 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              <path d="M15.2 2.8v3.9h-3.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Reset cube</span>
+            <kbd>R</kbd>
+          </button>
+
+          <div class="metrics-strip" aria-label="Live search metrics">
+            <div class="metric">
+              <span class="metric-label" title="15,000,000 node run budget">NODES / 15M</span>
+              <strong id="metricNodes">0</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">DEPTH</span>
+              <strong><span id="metricDepth">—</span><em id="metricDepthMax">/100</em></strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">TIME</span>
+              <strong><span id="metricTime">0.00</span><em>s</em></strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">VISITED</span>
+              <strong id="metricVisited">0</strong>
+            </div>
+          </div>
+
+          <div class="config-block">
+            <label class="slider-row">
+              <span class="slider-head">
+                <span>SCRAMBLE LENGTH</span>
+                <strong id="scrambleLengthValue">5</strong>
+              </span>
+              <input id="scrambleLength" type="range" min="4" max="7" step="1" value="5" />
+            </label>
+            <label class="slider-row">
+              <span class="slider-head">
+                <span>MAX DFS DEPTH</span>
+                <strong id="maxDepthValue">100</strong>
+              </span>
+              <input id="maxDepth" type="range" min="3" max="100" step="1" value="100" />
+            </label>
+          </div>
+
+          <p class="config-note">
+            <span class="config-note-dot"></span>
+            Every scramble from 4–7 moves is fully searchable. The 15M node cap keeps longer searches bounded.
+          </p>
+
+          <div class="speed-row">
+            <span class="speed-label">PLAYBACK SPEED</span>
+            <div class="speed-control" id="speedControl" role="group" aria-label="Playback speed">
+              <button type="button" data-speed="1">1×</button>
+              <button type="button" data-speed="2" class="active">2×</button>
+              <button type="button" data-speed="4">4×</button>
+              <button type="button" data-speed="turbo" class="turbo">
+                <span class="bolt" aria-hidden="true">↯</span> TURBO
+              </button>
+            </div>
+          </div>
+
+          <div class="sequence-block">
+            <div class="sequence-head">
+              <span>MOVE SEQUENCE</span>
+              <span class="sequence-meta" id="scrambleCount">EMPTY</span>
+            </div>
+            <div class="chips" id="scrambleChips">
+              <span class="chips-empty">Scramble the cube to populate this trace.</span>
+            </div>
+
+            <div class="sequence-head solution-head">
+              <span>SOLUTION PATH</span>
+              <span class="sequence-meta lime" id="solutionCount">0 MOVES</span>
+            </div>
+            <div class="chips solution-chips" id="solutionChips">
+              <span class="chips-empty">DFS output will appear here.</span>
+            </div>
+          </div>
+
+          <div class="console-foot">
+            <span><i class="foot-dot"></i> FIRST-FOUND ROUTE · NOT OPTIMAL</span>
+            <button class="copy-btn" id="copyBtn" type="button" disabled>
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5.3" y="5.3" width="8" height="8" rx="1.4" stroke="currentColor" stroke-width="1.2" />
+                <path d="M10.7 5.3V3.8c0-.8-.7-1.5-1.5-1.5H3.8c-.8 0-1.5.7-1.5 1.5v5.4c0 .8.7 1.5 1.5 1.5h1.5" stroke="currentColor" stroke-width="1.2" />
+              </svg>
+              COPY
+            </button>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="page-foot">
+        <div>STACK <strong>TS</strong><i></i><strong>THREE.JS</strong><i></i><strong>DFS</strong></div>
+        <div class="foot-center">PRUNED INVERSES / SAME-FACE REPEATS <i></i> TRANSPOSITION GUARD</div>
+        <div>BUILD <strong>001</strong></div>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
